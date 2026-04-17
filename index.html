@@ -21,8 +21,15 @@
     html, body {
       width: 100%; height: 100%;
       overflow: hidden;
-      background: #f5f4f2 url('./AdobeStock_303132792.jpeg') center center / cover fixed;
+      background: var(--bg);
       font-family: 'Kalam', cursive;
+    }
+
+    /* ── Wood-grain canvas sits behind everything ── */
+    #grain {
+      position: fixed; inset: 0;
+      pointer-events: none;
+      z-index: 0;
     }
 
     /* ── Screens ── */
@@ -300,6 +307,9 @@
 
 
 
+<!-- Wood-grain texture canvas -->
+<canvas id="grain"></canvas>
+
 <!-- ═══════════════════════════════════════════════
      SCREEN 1 – LANDING
 ═══════════════════════════════════════════════ -->
@@ -497,6 +507,43 @@
 
 
 <script>
+/* ════════════════════════════════════════════════
+   WOOD-GRAIN BACKGROUND
+════════════════════════════════════════════════ */
+(function(){
+  const c = document.getElementById('grain');
+  const ctx = c.getContext('2d');
+  function draw(){
+    c.width  = window.innerWidth;
+    c.height = window.innerHeight;
+    const W = c.width, H = c.height;
+    ctx.fillStyle = '#f0f5f0';
+    ctx.fillRect(0,0,W,H);
+    const lines = 110;
+    for(let i=0;i<lines;i++){
+      const baseY = (i/lines)*H;
+      const alpha = 0.04 + Math.random()*0.11;
+      const lw    = 0.4  + Math.random()*0.7;
+      ctx.beginPath();
+      let x=0, y=baseY+(Math.random()-0.5)*6;
+      ctx.moveTo(x,y);
+      while(x < W){
+        const nx = x + 40 + Math.random()*30;
+        const ny = baseY
+          + Math.sin(nx*0.018 + i*1.1)*( 2+Math.random()*3 )
+          + Math.sin(nx*0.007 + i*0.4)*( 1+Math.random()*2 );
+        ctx.quadraticCurveTo(x+(nx-x)*0.5, y+(Math.random()-0.5)*5, nx, ny);
+        x=nx; y=ny;
+      }
+      ctx.strokeStyle=`rgba(120,160,130,${alpha})`;
+      ctx.lineWidth=lw;
+      ctx.stroke();
+    }
+  }
+  draw();
+  window.addEventListener('resize',draw);
+})();
+
 /* ════════════════════════════════════════════════
    APP STATE
 ════════════════════════════════════════════════ */

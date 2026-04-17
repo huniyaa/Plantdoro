@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plantdoro – Cultivate Your Attention Span</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
+  <script type="module" src="https://unpkg.com/@splinetool/viewer@1.12.81/build/spline-viewer.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --g-dark:   #1a3a1a;
+      --g-mid:    #2d5a1b;
+      --g-light:  #4a8c2a;
+      --g-bright: #5aaa30;
+      --brown:    #a04020;
+      --bg:       #f0f5f0;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      font-family: 'Kalam', cursive;
+    }
+
+    /* ── Wood-grain canvas sits behind everything ── */
+    #grain {
+      position: fixed; inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Screens ── */
+    .screen {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.45s ease;
+      z-index: 1;
+    }
+    .screen.active { opacity: 1; pointer-events: all; }
+
+    /* ───────────────────────────────────────────────
+       LANDING
+    ─────────────────────────────────────────────── */
+    .land-wrap {
+      width: min(920px, 90vw);
+      display: flex; flex-direction: column;
+      gap: 0;
+    }
+
+    .tagline {
+      font-size: clamp(0.95rem, 1.8vw, 1.35rem);
+      color: var(--g-mid);
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+      opacity: 0; animation: slideUp 0.6s 0.1s ease forwards;
+    }
+
+    .title-row {
+      display: flex; align-items: center; gap: 16px;
+      margin-bottom: 44px;
+      opacity: 0; animation: slideUp 0.6s 0.22s ease forwards;
+    }
+
+    .logo {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(4.5rem, 9vw, 8.5rem);
+      line-height: 1; user-select: none;
+      letter-spacing: -0.01em;
+    }
+    .logo .pl  { color: #4a8c2a; }
+    .logo .dk  { color: #1a3a1a; }
+
+    .land-btn {
+      opacity: 0; animation: slideUp 0.6s 0.34s ease forwards;
+    }
+
+    /* ───────────────────────────────────────────────
+       SHARED BUTTON
+    ─────────────────────────────────────────────── */
+    .btn {
+      font-family: 'Kalam', cursive; font-weight: 700;
+      font-size: clamp(1.1rem, 2vw, 1.6rem);
+      color: #fff; background: var(--g-dark);
+      border: none; border-radius: 60px;
+      padding: 16px 36px; cursor: pointer;
+      letter-spacing: 0.04em;
+      box-shadow: 0 4px 22px rgba(26,58,26,.28);
+      transition: transform .15s, box-shadow .15s;
+      width: 100%;
+    }
+    .btn:hover  { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(26,58,26,.38); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: .5; cursor: default; transform: none; }
+
+    /* ───────────────────────────────────────────────
+       PLANT SELECTION
+    ─────────────────────────────────────────────── */
+    .pick-card {
+      background: rgba(250,253,250,.96);
+      border: 4px solid var(--g-dark);
+      border-radius: 18px;
+      outline: 4px solid var(--g-dark);
+      outline-offset: -10px;
+      padding: clamp(28px,5vw,60px) clamp(24px,6vw,70px);
+      width: min(820px, 92vw);
+      box-shadow: inset 0 0 0 3px rgba(26,58,26,.12);
+    }
+
+    .pick-title {
+      font-family: 'Kalam', cursive; font-size: clamp(1.6rem,3vw,2.3rem);
+      color: var(--g-dark); text-align: center;
+      margin-bottom: clamp(24px,4vw,44px);
+    }
+
+    .plants-row {
+      display: flex; justify-content: space-around;
+      gap: 16px; flex-wrap: wrap;
+    }
+
+    .p-opt {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 14px;
+      padding: 12px 16px; border-radius: 14px;
+      cursor: pointer;
+      transition: transform .2s, background .2s;
+    }
+    .p-opt:hover { transform: translateY(-5px); background: rgba(74,140,42,.1); }
+    .p-opt.locked { cursor: default; filter: grayscale(.1); }
+    .p-opt.locked:hover { transform: none; background: none; }
+
+    .p-name {
+      font-family: 'Kalam', cursive; font-weight: 700;
+      font-size: clamp(1rem,2vw,1.3rem); color: var(--g-dark);
+    }
+
+    /* ───────────────────────────────────────────────
+       TIMER SCREEN
+    ─────────────────────────────────────────────── */
+    #screen-timer {
+      align-items: stretch;
+      justify-content: flex-start;
+    }
+
+    .t-header {
+      flex-shrink: 0;
+      padding: clamp(12px,2vw,22px) clamp(20px,3vw,36px) 0;
+    }
+    .t-logo {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(1.5rem,3vw,2.4rem); line-height: 1;
+    }
+    .t-logo .pl { color: var(--g-light); }
+    .t-logo .dk { color: var(--g-dark); }
+    .t-sub { font-size: clamp(.7rem,1.2vw,.95rem); color: var(--g-mid); margin-top: 2px; }
+
+    .t-body {
+      flex: 1; min-height: 0;
+      display: flex; align-items: center;
+      padding: clamp(12px,2vw,24px) clamp(20px,3vw,40px) clamp(16px,2.5vw,30px);
+      gap: clamp(24px,4vw,48px);
+    }
+
+    /* Spline side */
+    .spline-wrap {
+      flex: 0 0 58%;
+      height: 100%;
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    spline-viewer {
+      width: 100%; height: 100%;
+      display: block;
+    }
+
+    /* Blocker overlay – active by default (blocks clicks) */
+    #blocker {
+      position: absolute; inset: 0; z-index: 10;
+      background: transparent;
+      cursor: not-allowed;
+      transition: opacity .3s;
+    }
+    #blocker.off {
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    /* Water-now badge */
+    #water-badge {
+      position: absolute; top: 14px; left: 50%;
+      transform: translateX(-50%);
+      background: var(--g-dark); color: #fff;
+      font-family: 'Kalam', cursive; font-weight: 700;
+      font-size: clamp(.8rem,1.5vw,1.05rem);
+      padding: 7px 20px; border-radius: 50px;
+      z-index: 20; pointer-events: none;
+      white-space: nowrap;
+      opacity: 0; transition: opacity .3s;
+    }
+    #water-badge.show {
+      opacity: 1;
+      animation: pulseBadge 1.4s ease-in-out infinite;
+    }
+    @keyframes pulseBadge {
+      0%,100% { transform: translateX(-50%) scale(1); }
+      50%      { transform: translateX(-50%) scale(1.06); }
+    }
+
+    /* Controls side */
+    .ctrl {
+      flex: 1;
+      display: flex; flex-direction: column;
+      align-items: center; gap: clamp(14px,2.5vw,22px);
+    }
+
+    #t-display {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(4rem,9vw,8rem);
+      color: var(--g-dark); line-height: 1;
+      letter-spacing: -.01em;
+    }
+
+    .bar-wrap {
+      width: 100%; height: 16px;
+      background: #fff;
+      border-radius: 8px;
+      border: 2.5px solid var(--g-dark);
+      overflow: hidden;
+    }
+    #bar-fill {
+      height: 100%;
+      background: var(--g-dark);
+      border-radius: 6px;
+      width: 100%;
+      transition: width 1s linear;
+    }
+
+    #start-btn { max-width: 300px; font-size: clamp(1rem,2vw,1.4rem); }
+
+    #mode-btn {
+      font-family: 'Kalam', cursive;
+      font-size: clamp(.7rem,1.2vw,.88rem);
+      color: var(--g-mid); background: none;
+      border: 1.5px dashed var(--g-mid);
+      border-radius: 20px; padding: 4px 14px;
+      cursor: pointer; transition: background .2s;
+    }
+    #mode-btn:hover { background: rgba(74,140,42,.08); }
+
+    .stage-txt {
+      font-size: clamp(.85rem,1.5vw,1rem);
+      color: var(--g-mid);
+    }
+    .stage-txt span { color: var(--g-dark); font-weight: 700; }
+
+    /* ───────────────────────────────────────────────
+       COMPLETION OVERLAY
+    ─────────────────────────────────────────────── */
+    #completion {
+      display: none; position: fixed; inset: 0;
+      z-index: 200;
+      background: rgba(10,30,10,.88);
+      align-items: center; justify-content: center;
+      flex-direction: column; gap: 20px;
+      text-align: center;
+    }
+    #completion.show { display: flex; animation: fadeIn .5s ease; }
+
+    .comp-icon { font-size: clamp(3rem,8vw,5.5rem); }
+    .comp-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(1.8rem,4vw,3rem); color: #fff;
+    }
+    .comp-sub {
+      font-size: clamp(.9rem,1.8vw,1.25rem);
+      color: rgba(255,255,255,.82);
+      max-width: 420px;
+    }
+    .btn-light {
+      font-family: 'Kalam', cursive; font-weight: 700;
+      font-size: clamp(.95rem,1.8vw,1.2rem);
+      color: var(--g-dark); background: #fff;
+      border: none; border-radius: 50px;
+      padding: 12px 32px; cursor: pointer;
+      margin-top: 6px;
+      transition: transform .15s;
+    }
+    .btn-light:hover { transform: scale(1.05); }
+
+    /* ── keyframes ── */
+    @keyframes slideUp {
+      from { transform: translateY(28px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0 } to { opacity: 1 }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Wood-grain texture canvas -->
+<canvas id="grain"></canvas>
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN 1 – LANDING
+═══════════════════════════════════════════════ -->
+<div id="screen-landing" class="screen active">
+  <div class="land-wrap">
+
+    <p class="tagline">Cultivate Your Attention Span</p>
+
+    <div class="title-row">
+      <h1 class="logo">
+        <span class="pl">P</span><span class="pl">L</span><span class="pl">A</span><span class="pl">N</span><span class="pl">T</span><span class="dk">D</span><span class="dk">O</span><span class="dk">R</span><span class="dk">O</span>
+      </h1>
+      <!-- Money plant SVG illustration -->
+      <svg width="138" height="158" viewBox="0 0 138 158" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <ellipse cx="69" cy="143" rx="46" ry="14" fill="#7a2e0e"/>
+        <path d="M28,143 Q21,108 28,94 Q69,76 110,94 Q117,108 110,143 Z" fill="#a03820"/>
+        <path d="M32,138 Q27,112 33,100 Q69,84 105,100 Q111,112 106,138 Z" fill="#c04828"/>
+        <ellipse cx="69" cy="94" rx="46" ry="13" fill="#7a2e0e"/>
+        <ellipse cx="69" cy="91" rx="42" ry="11" fill="#c05228"/>
+        <ellipse cx="69" cy="91" rx="35" ry="9"  fill="#3d2310"/>
+        <!-- stems -->
+        <line x1="69" y1="87" x2="50" y2="62" stroke="#2a6010" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="69" y1="82" x2="86" y2="55" stroke="#2a6010" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="67" y1="78" x2="68" y2="38" stroke="#2a6010" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="69" y1="72" x2="54" y2="50" stroke="#2a6010" stroke-width="2"   stroke-linecap="round"/>
+        <!-- leaves -->
+        <ellipse cx="46" cy="56" rx="15" ry="10" fill="#4aaa26" transform="rotate(-38 46 56)"/>
+        <ellipse cx="46" cy="56" rx="13" ry="8"  fill="#5abe30" transform="rotate(-38 46 56)"/>
+        <ellipse cx="88" cy="51" rx="15" ry="10" fill="#3d8e1c" transform="rotate(28 88 51)"/>
+        <ellipse cx="88" cy="51" rx="13" ry="8"  fill="#4aa024" transform="rotate(28 88 51)"/>
+        <ellipse cx="69" cy="34" rx="13" ry="9"  fill="#46a224" transform="rotate(-4 69 34)"/>
+        <ellipse cx="69" cy="34" rx="11" ry="7"  fill="#56b82e" transform="rotate(-4 69 34)"/>
+        <ellipse cx="51" cy="46" rx="11" ry="7"  fill="#4aaa26" transform="rotate(-22 51 46)"/>
+      </svg>
+    </div>
+
+    <div class="land-btn">
+      <button class="btn" onclick="showScreen('plants')">Get Started</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN 2 – PICK YOUR PLANT
+═══════════════════════════════════════════════ -->
+<div id="screen-plants" class="screen">
+  <div class="pick-card">
+    <h2 class="pick-title">Pick Your Plant</h2>
+    <div class="plants-row">
+
+      <!-- Money Plant -->
+      <div class="p-opt" onclick="selectPlant('money')" role="button" tabindex="0">
+        <svg width="120" height="148" viewBox="0 0 130 158" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="65" cy="143" rx="44" ry="13" fill="#7a2e0e"/>
+          <path d="M26,143 Q20,108 26,94 Q65,76 104,94 Q110,108 104,143 Z" fill="#a03820"/>
+          <path d="M30,136 Q25,110 30,98 Q65,82 100,98 Q105,110 100,136 Z" fill="#bf4726"/>
+          <ellipse cx="65" cy="94" rx="44" ry="13" fill="#7a2e0e"/>
+          <ellipse cx="65" cy="91" rx="40" ry="11" fill="#c05228"/>
+          <ellipse cx="65" cy="91" rx="33" ry="8"  fill="#3d2310"/>
+          <line x1="65" y1="87" x2="48" y2="62" stroke="#2a6010" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="65" y1="82" x2="82" y2="55" stroke="#2a6010" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="63" y1="78" x2="65" y2="38" stroke="#2a6010" stroke-width="2.5" stroke-linecap="round"/>
+          <ellipse cx="44" cy="56" rx="14" ry="9"  fill="#4aaa26" transform="rotate(-38 44 56)"/>
+          <ellipse cx="44" cy="56" rx="12" ry="7"  fill="#5abe30" transform="rotate(-38 44 56)"/>
+          <ellipse cx="84" cy="51" rx="14" ry="9"  fill="#3d8e1c" transform="rotate(28 84 51)"/>
+          <ellipse cx="65" cy="34" rx="13" ry="8"  fill="#46a224" transform="rotate(-4 65 34)"/>
+        </svg>
+        <span class="p-name">Money Plant</span>
+      </div>
+
+      <!-- Primrose -->
+      <div class="p-opt" onclick="selectPlant('primrose')" role="button" tabindex="0">
+        <svg width="120" height="148" viewBox="0 0 130 158" xmlns="http://www.w3.org/2000/svg">
+          <!-- tall terracotta pot -->
+          <rect x="25" y="90" width="80" height="58" rx="4" fill="#c4884a"/>
+          <rect x="25" y="90" width="80" height="14" rx="4" fill="#d4984a"/>
+          <ellipse cx="65" cy="148" rx="40" ry="10" fill="#a87038"/>
+          <ellipse cx="65" cy="92"  rx="36" ry="9"  fill="#3a2010"/>
+          <!-- stems -->
+          <line x1="52" y1="88" x2="42" y2="64" stroke="#386018" stroke-width="2" stroke-linecap="round"/>
+          <line x1="58" y1="88" x2="54" y2="56" stroke="#386018" stroke-width="2" stroke-linecap="round"/>
+          <line x1="65" y1="88" x2="65" y2="50" stroke="#386018" stroke-width="2" stroke-linecap="round"/>
+          <line x1="72" y1="88" x2="76" y2="56" stroke="#386018" stroke-width="2" stroke-linecap="round"/>
+          <line x1="78" y1="88" x2="88" y2="64" stroke="#386018" stroke-width="2" stroke-linecap="round"/>
+          <!-- flowers -->
+          <g transform="translate(42,59)">
+            <circle cx="0" cy="-8" r="5.5" fill="#7048c0"/><circle cx="7.6" cy="-4" r="5.5" fill="#8058d0"/>
+            <circle cx="7.6" cy="4"  r="5.5" fill="#7048c0"/><circle cx="0"   cy="8" r="5.5" fill="#9068e0"/>
+            <circle cx="-7.6" cy="4" r="5.5" fill="#7048c0"/><circle cx="-7.6" cy="-4" r="5.5" fill="#8058d0"/>
+            <circle cx="0" cy="0" r="4.5" fill="#f0d060"/>
+          </g>
+          <g transform="translate(65,44)">
+            <circle cx="0" cy="-8" r="5.5" fill="#8058d0"/><circle cx="7.6" cy="-4" r="5.5" fill="#7048c0"/>
+            <circle cx="7.6" cy="4"  r="5.5" fill="#9068e0"/><circle cx="0"   cy="8" r="5.5" fill="#7048c0"/>
+            <circle cx="-7.6" cy="4" r="5.5" fill="#8058d0"/><circle cx="-7.6" cy="-4" r="5.5" fill="#6038b0"/>
+            <circle cx="0" cy="0" r="4.5" fill="#f0d060"/>
+          </g>
+          <g transform="translate(88,59)">
+            <circle cx="0" cy="-8" r="5.5" fill="#7048c0"/><circle cx="7.6" cy="-4" r="5.5" fill="#9068e0"/>
+            <circle cx="7.6" cy="4"  r="5.5" fill="#7048c0"/><circle cx="0"   cy="8" r="5.5" fill="#8058d0"/>
+            <circle cx="-7.6" cy="4" r="5.5" fill="#6038b0"/><circle cx="-7.6" cy="-4" r="5.5" fill="#8058d0"/>
+            <circle cx="0" cy="0" r="4.5" fill="#f0d060"/>
+          </g>
+          <!-- leaves -->
+          <ellipse cx="48" cy="82" rx="13" ry="7" fill="#3a8820" transform="rotate(-22 48 82)"/>
+          <ellipse cx="82" cy="82" rx="13" ry="7" fill="#3a8820" transform="rotate(22 82 82)"/>
+        </svg>
+        <span class="p-name">Primrose</span>
+      </div>
+
+      <!-- Unlock More (locked) -->
+      <div class="p-opt locked" role="button" aria-disabled="true">
+        <svg width="120" height="148" viewBox="0 0 130 158" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="65" cy="143" rx="44" ry="13" fill="#282828"/>
+          <path d="M26,143 Q20,108 26,94 Q65,76 104,94 Q110,108 104,143 Z" fill="#1a1a1a"/>
+          <path d="M30,136 Q25,110 30,98 Q65,82 100,98 Q105,110 100,136 Z" fill="#202020"/>
+          <ellipse cx="65" cy="94" rx="44" ry="13" fill="#282828"/>
+          <ellipse cx="65" cy="91" rx="40" ry="11" fill="#333"/>
+          <ellipse cx="65" cy="91" rx="33" ry="8"  fill="#111"/>
+          <line x1="65" y1="87" x2="48" y2="62" stroke="#222" stroke-width="3" stroke-linecap="round"/>
+          <line x1="65" y1="82" x2="82" y2="55" stroke="#222" stroke-width="3" stroke-linecap="round"/>
+          <line x1="63" y1="78" x2="65" y2="38" stroke="#222" stroke-width="3" stroke-linecap="round"/>
+          <ellipse cx="44" cy="56" rx="14" ry="9" fill="#222" transform="rotate(-38 44 56)"/>
+          <ellipse cx="84" cy="51" rx="14" ry="9" fill="#1a1a1a" transform="rotate(28 84 51)"/>
+          <ellipse cx="65" cy="34" rx="13" ry="8" fill="#222" transform="rotate(-4 65 34)"/>
+          <!-- lock icon over the pot -->
+          <rect x="48" y="88" width="34" height="26" rx="5" fill="#555"/>
+          <path d="M56,88 Q56,72 65,72 Q74,72 74,88" fill="none" stroke="#555" stroke-width="5" stroke-linecap="round"/>
+          <circle cx="65" cy="101" r="5" fill="#888"/>
+          <rect x="62" y="101" width="6" height="7" rx="2" fill="#888"/>
+        </svg>
+        <span class="p-name">Unlock More!</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN 3 – TIMER
+═══════════════════════════════════════════════ -->
+<div id="screen-timer" class="screen">
+
+  <!-- Header -->
+  <div class="t-header">
+    <div class="t-logo">
+      <span class="pl">PLANT</span><span class="dk">DORO</span>
+    </div>
+    <div class="t-sub">Cultivate Your Attention Span</div>
+  </div>
+
+  <!-- Body: Spline left, controls right -->
+  <div class="t-body">
+
+    <!-- Spline viewer -->
+    <div class="spline-wrap">
+      <div id="blocker"></div>
+      <div id="water-badge">🌿 Water your plant!</div>
+      <spline-viewer
+        url="https://prod.spline.design/qCQc8sx4v5OMPayy/scene.splinecode"
+        loading-anim-type="none">
+      </spline-viewer>
+    </div>
+
+    <!-- Controls -->
+    <div class="ctrl">
+      <div id="t-display">0:05</div>
+
+      <div class="bar-wrap">
+        <div id="bar-fill"></div>
+      </div>
+
+      <button id="start-btn" class="btn" onclick="toggleTimer()">Start</button>
+
+      <button id="mode-btn" onclick="toggleMode()">Mode: Testing (5s)</button>
+
+      <div class="stage-txt">
+        Stage: <span id="stage-num">0</span> / 6
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     COMPLETION OVERLAY
+═══════════════════════════════════════════════ -->
+<div id="completion">
+  <div class="comp-icon">🌿</div>
+  <div class="comp-title">Plant Fully Grown!</div>
+  <div class="comp-sub">You've completed all 6 intervals. Incredible focus!</div>
+  <button class="btn-light" onclick="resetApp()">Grow Another Plant</button>
+</div>
+
+
+<script>
+/* ════════════════════════════════════════════════
+   WOOD-GRAIN BACKGROUND
+════════════════════════════════════════════════ */
+(function(){
+  const c = document.getElementById('grain');
+  const ctx = c.getContext('2d');
+  function draw(){
+    c.width  = window.innerWidth;
+    c.height = window.innerHeight;
+    const W = c.width, H = c.height;
+    ctx.fillStyle = '#f0f5f0';
+    ctx.fillRect(0,0,W,H);
+    const lines = 110;
+    for(let i=0;i<lines;i++){
+      const baseY = (i/lines)*H;
+      const alpha = 0.04 + Math.random()*0.11;
+      const lw    = 0.4  + Math.random()*0.7;
+      ctx.beginPath();
+      let x=0, y=baseY+(Math.random()-0.5)*6;
+      ctx.moveTo(x,y);
+      while(x < W){
+        const nx = x + 40 + Math.random()*30;
+        const ny = baseY
+          + Math.sin(nx*0.018 + i*1.1)*( 2+Math.random()*3 )
+          + Math.sin(nx*0.007 + i*0.4)*( 1+Math.random()*2 );
+        ctx.quadraticCurveTo(x+(nx-x)*0.5, y+(Math.random()-0.5)*5, nx, ny);
+        x=nx; y=ny;
+      }
+      ctx.strokeStyle=`rgba(120,160,130,${alpha})`;
+      ctx.lineWidth=lw;
+      ctx.stroke();
+    }
+  }
+  draw();
+  window.addEventListener('resize',draw);
+})();
+
+/* ════════════════════════════════════════════════
+   APP STATE
+════════════════════════════════════════════════ */
+const MODES = { test: 5, full: 1800 };
+let mode            = 'test';
+let totalSecs       = MODES[mode];
+let remainingSecs   = totalSecs;
+let timerRunning    = false;
+let timerInterval   = null;
+let canWater        = false;
+let stage           = 0;
+
+/* ════════════════════════════════════════════════
+   SCREEN NAVIGATION
+════════════════════════════════════════════════ */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+}
+
+function selectPlant(name){
+  if(!name) return;
+  showScreen('timer');
+  hardReset();
+}
+
+/* keyboard support for plant cards */
+document.querySelectorAll('.p-opt:not(.locked)').forEach(el=>{
+  el.addEventListener('keydown',e=>{
+    if(e.key==='Enter'||e.key===' ') el.click();
+  });
+});
+
+/* ════════════════════════════════════════════════
+   TIMER
+════════════════════════════════════════════════ */
+function fmt(s){
+  if(mode==='test') return `0:${String(s).padStart(2,'0')}`;
+  const m = Math.floor(s/60);
+  return `${m}:${String(s%60).padStart(2,'0')}`;
+}
+
+function updateUI(){
+  document.getElementById('t-display').textContent = fmt(remainingSecs);
+  document.getElementById('bar-fill').style.width  = (remainingSecs/totalSecs*100)+'%';
+}
+
+function toggleTimer(){
+  if(canWater) return;        // must water first
+  timerRunning ? pause() : start();
+}
+
+function start(){
+  timerRunning=true;
+  document.getElementById('start-btn').textContent='Pause';
+  timerInterval=setInterval(()=>{
+    remainingSecs--;
+    updateUI();
+    if(remainingSecs<=0){
+      clearInterval(timerInterval);
+      timerRunning=false;
+      remainingSecs=0;
+      updateUI();
+      onIntervalEnd();
+    }
+  },1000);
+}
+
+function pause(){
+  timerRunning=false;
+  clearInterval(timerInterval);
+  document.getElementById('start-btn').textContent='Resume';
+}
+
+function onIntervalEnd(){
+  canWater=true;
+  document.getElementById('start-btn').textContent='Start';
+  setWatering(true);
+}
+
+function hardReset(){
+  clearInterval(timerInterval);
+  timerRunning=false;
+  canWater=false;
+  remainingSecs=totalSecs;
+  updateUI();
+  document.getElementById('start-btn').textContent='Start';
+  setWatering(false);
+}
+
+/* ════════════════════════════════════════════════
+   WATERING INTERACTION
+════════════════════════════════════════════════ */
+function setWatering(on){
+  const bl = document.getElementById('blocker');
+  const bk = document.getElementById('water-badge');
+  if(on){ bl.classList.add('off'); bk.classList.add('show'); }
+  else  { bl.classList.remove('off'); bk.classList.remove('show'); }
+}
+
+// Detect any click that reaches the Spline viewer
+// (when blocker is .off its pointer-events=none so clicks pass through)
+document.getElementById('blocker').closest('.spline-wrap')
+  .addEventListener('click', ()=>{
+    if(!canWater) return;
+    water();
+  });
+
+function water(){
+  if(!canWater) return;
+  canWater=false;
+  stage++;
+  document.getElementById('stage-num').textContent=stage;
+  setWatering(false);
+
+  if(stage>=6){
+    setTimeout(()=>document.getElementById('completion').classList.add('show'),900);
+  } else {
+    remainingSecs=totalSecs;
+    updateUI();
+    document.getElementById('start-btn').textContent='Start';
+  }
+}
+
+/* ════════════════════════════════════════════════
+   MODE TOGGLE
+════════════════════════════════════════════════ */
+function toggleMode(){
+  mode = mode==='test' ? 'full' : 'test';
+  totalSecs = MODES[mode];
+  document.getElementById('mode-btn').textContent =
+    mode==='test' ? 'Mode: Testing (5s)' : 'Mode: Full (30min)';
+  hardReset();
+}
+
+/* ════════════════════════════════════════════════
+   RESET
+════════════════════════════════════════════════ */
+function resetApp(){
+  stage=0;
+  document.getElementById('stage-num').textContent='0';
+  document.getElementById('completion').classList.remove('show');
+  hardReset();
+  showScreen('plants');
+}
+
+// Init
+updateUI();
+</script>
+</body>
+</html>

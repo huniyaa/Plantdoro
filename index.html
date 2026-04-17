@@ -195,11 +195,11 @@
 
     /* Water-now badge */
     #water-badge {
-      position: absolute; top: 14px; left: 50%;
+      position: fixed; top: 18px; left: 50%;
       transform: translateX(-50%);
       background: var(--g-dark); color: #fff;
       font-family: 'Kirang Haerang', cursive; font-weight: 700;
-      font-size: clamp(.8rem,1.5vw,1.05rem);
+      font-size: clamp(.9rem,1.5vw,1.1rem);
       padding: 7px 20px; border-radius: 50px;
       z-index: 20; pointer-events: none;
       white-space: nowrap;
@@ -398,9 +398,9 @@
   <div class="t-body">
 
     <!-- Spline viewer -->
+    <div id="water-badge">🌿 Water your plant!</div>
     <div class="spline-wrap">
       <div id="blocker"></div>
-      <div id="water-badge">🌿 Water your plant!</div>
       <spline-viewer
         url="https://prod.spline.design/qCQc8sx4v5OMPayy/scene.splinecode"
         loading-anim-type="none">
